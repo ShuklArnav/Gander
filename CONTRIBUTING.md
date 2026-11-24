@@ -9,6 +9,18 @@ Gander is a small CLI library for the [Goose](https://github.com/aardappel/goose
 programming language. It builds a command tree from Goose enums and dispatches
 matching `exec` overloads for the root command and selected subcommands.
 
+Gander requires the `fields<T>` expansion to accept both of these forms:
+
+```goose
+const for <NAME, ACCESSOR> in fields<MyStruct> {}
+const for <NAME, ACCESSOR, READ_TYPE> in fields<MyStruct> {}
+```
+
+The optional third binding receives the field's read type, including enum
+variant fields. To build your own version of goose compiler, make these
+changes in the local copy of the Goose source code
+[Goose](https://github.com/aardappel/goose) and build it.
+
 ### Specific Changes
 
 - **src/parser.h**
@@ -24,7 +36,7 @@ matching `exec` overloads for the root command and selected subcommands.
             auto arity = cf->source == ES_VARIANTS ? 2u : 1u;
       ```
 
-  2. Hence, add after line 1907
+  2. Then, add after line 1907
 
       ```cpp
         }
@@ -51,7 +63,7 @@ matching `exec` overloads for the root command and selected subcommands.
                 auto &f = (*fields)[i];
       ```
 
-  2. Hence add after 342
+  2. Thereby add after 342
 
       ```cpp
                 if (cf->names.size() == 3) {
@@ -64,17 +76,6 @@ matching `exec` overloads for the root command and selected subcommands.
                     });
                 }
       ```
-
-Gander requires the `fields<T>` expansion to accept both of these forms:
-
-```goose
-const for <NAME, ACCESSOR> in fields<MyStruct> {}
-const for <NAME, ACCESSOR, READ_TYPE> in fields<MyStruct> {}
-```
-
-The optional third binding receives the field's read type, including enum
-variant fields. Do not replace it with an assumed struct-only or storage-type
-implementation.
 
 ## Checks
 
