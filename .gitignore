@@ -1,0 +1,17 @@
+# Goose build products
+*.exe
+*.o
+*.obj
+*.pdb
+build/
+dist/
+out/
+
+# Editors and OS files
+.vscode/
+.idea/
+.github/copilot-instructions.md
+*.user
+*.suo
+.DS_Store
+Thumbs.db

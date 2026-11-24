@@ -122,6 +122,85 @@ recursive fn command<T>(com: Command&) -> Command& {
     com
 }
 
+/***********/
+/* Running */
+/***********/
+
+/// Find the sub-command named `name` below `command`
+fn find(command: Command&, name: const u8[:]) -> Command? {
+    for c in command._commands {
+        assert(c);
+        if c.name == name { return c; }
+    }
+    null
+}
+
+/// A value of the root enum type, for its `exec`
+fn root<T>() -> T {
+    const for <NAME, VARIANT> in variants<T> {
+        return VARIANT { .. };
+    }
+    abort("cannot run an enum without variants");
+}
+
+/// Dispatch the arguments below a command of type `T`
+recursive fn dispatch<T>(
+    command: Command&,
+    args:    const (const u8[:])[:],
+    next:    i64,
+) -> bool {
+    const for <NAME, VARIANT> in variants<T> {
+        if command.name == NAME {
+            if next < args.len {
+                if args[next] == "--help" || args[next] == "-h" {
+                    print(command);
+                    return true;
+                }
+            }
+            exec(VARIANT { .. });
+            if next < args.len {
+                const for <PROP, _, TYPE> in fields<VARIANT> {
+                    const if PROP == "commands" {
+                        if dispatchCommand<TYPE>(command, args[next], args, next + 1) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+    }
+    false
+}
+
+/// Find the sub-command named `name` and dispatch below it
+recursive fn dispatchCommand<T>(
+    command: Command&,
+    name:    const u8[:],
+    args:    const (const u8[:])[:],
+    next:    i64,
+) -> bool {
+    let child = find(command, name);
+    guard child else { return false; }
+    dispatch<T>(child, args, next)
+}
+
+/// Run `command` with `args`
+fn run<T>(command: Command&, args: const (const u8[:])[:]) {
+    if args.len >= 2 && (args[1] == "--help" || args[1] == "-h") {
+        print(command);
+        return;
+    }
+    exec(root<T>());
+    guard args.len >= 2 else { return; }
+    let child = find(command, args[1]);
+    guard child else {
+        print(command);
+        return;
+    }
+    dispatch<T>(child, args, 2);
+}
+
 /***************************/
 /* Formatting and Printing */
 /***************************/
